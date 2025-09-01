@@ -3,10 +3,17 @@
   const {useState, useEffect, useMemo} = React;
   const root = document.getElementById('root');
 
-  // 工具
+  // ===== 工具 =====
   const SPONSORED_REL = "sponsored nofollow noopener noreferrer";
-  function formatPrice(n, currency){ try{ return new Intl.NumberFormat('zh-TW',{style:'currency',currency:currency||'TWD',maximumFractionDigits:0}).format(Number(n||0)); }catch{return `${n} ${currency||''}`;}}
-  function daysFromNow(dateStr){ const one=86400000; const t=new Date(dateStr).getTime(); if(!t) return 999; return Math.floor((Date.now()-t)/one); }
+  function formatPrice(n, currency){
+    try{ return new Intl.NumberFormat('zh-TW',{style:'currency',currency:currency||'TWD',maximumFractionDigits:0}).format(Number(n||0)); }
+    catch{ return `${n} ${currency||''}`; }
+  }
+  function daysFromNow(dateStr){
+    const one=86400000; const t=new Date(dateStr).getTime();
+    if(!t) return 999;
+    return Math.floor((Date.now()-t)/one);
+  }
   function withUTM(raw, pid){
     try{
       const url=new URL(raw);
@@ -19,7 +26,7 @@
     }catch{ return raw; }
   }
 
-  // 收藏
+  // ===== 收藏（LocalStorage） =====
   function useFavorites(){
     const KEY='te_favorites';
     const [fav,setFav]=useState(()=>{ try{ const v=localStorage.getItem(KEY); return v? JSON.parse(v):[] }catch{return[]}});
@@ -28,7 +35,7 @@
     return {fav,toggle};
   }
 
-  // 輪播
+  // ===== 輪播 =====
   function ProductCarousel({images=[], alt}){
     const [idx,setIdx]=useState(0);
     const count=images.length;
@@ -44,7 +51,7 @@
     );
   }
 
-  // 主程式
+  // ===== 主程式 =====
   function App(){
     const [items,setItems]=useState([]);
     const [sortBy,setSortBy]=useState('latest'); // latest | popular
@@ -75,7 +82,7 @@
         const arr = Array.isArray(raw)? raw.map(norm): [];
         setItems(arr);
 
-        // JSON-LD
+        // JSON-LD（SEO）
         const ld = {
           "@context":"https://schema.org","@type":"CollectionPage","name":"TOKYO SELECT 選物清單","inLanguage":"zh-Hant","url":location.href,
           "mainEntity":{"@type":"ItemList","itemListElement":arr.map((p,i)=>({"@type":"Product","position":i+1,"name":p.name,"image":p.images&&p.images[0],"brand":p.category||"選物","offers":{"@type":"Offer","price":String(p.price),"priceCurrency":p.currency,"url":withUTM(p.link,p.id)}}))}
@@ -99,11 +106,12 @@
       return [...baseFiltered].sort((a,b)=> (b.popularity||0) - (a.popularity||0));
     }, [baseFiltered,sortBy]);
 
-    // 依數量簡化 UI
-    const showSearch = items.length >= 6;
-    const showSort   = items.length >= 4;
-    const showFavBtn = items.length >= 3;
-    const showCat    = categories.length > 2;
+    // ===== 關鍵：改成永遠顯示控制列 =====
+    const ALWAYS_SHOW_CONTROLS = true;
+    const showSearch = ALWAYS_SHOW_CONTROLS || items.length >= 6;
+    const showSort   = ALWAYS_SHOW_CONTROLS || items.length >= 4;
+    const showFavBtn = ALWAYS_SHOW_CONTROLS || items.length >= 1;
+    const showCat    = ALWAYS_SHOW_CONTROLS || categories.length > 1;
 
     return e(React.Fragment, null,
       // 控制列（品牌色）
