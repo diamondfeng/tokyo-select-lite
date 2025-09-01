@@ -5,6 +5,9 @@
 
   // ===== 工具 =====
   const SPONSORED_REL = "sponsored nofollow noopener noreferrer";
+  const CACHE_KEY = "te_items_cache_v1";
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
   function formatPrice(n, currency){
     try{ return new Intl.NumberFormat('zh-TW',{style:'currency',currency:currency||'TWD',maximumFractionDigits:0}).format(Number(n||0)); }
     catch{ return `${n} ${currency||''}`; }
@@ -25,10 +28,9 @@
       url.searchParams.set('utm_campaign',(window.UTM_PREFIX||'select')+ym); url.searchParams.set('utm_content', pid||''); return url.toString();
     }catch{ return raw; }
   }
-  // 產生穩定 id（當表上沒填時，與後端規則一致）
   function slugify(s){ return String(s||'').toLowerCase().replace(/^https?:\/\//,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,40); }
 
-  // 回報點擊：每次點擊產生唯一 hid；同一次點擊可能送兩次（beacon+GET），伺服器用 hid 去重
+  // 回報點擊（hid 去重：同人多次點都算）
   function hit(id){
     try{
       const u = new URL(window.DATA_URL);
@@ -38,14 +40,11 @@
       u.searchParams.set('ua', navigator.userAgent || '');
       u.searchParams.set('ref', location.href || '');
       u.searchParams.set('hid', hid);
-      u.searchParams.set('t', String(Date.now())); // 防快取
-
-      // 1) Beacon（POST）
+      u.searchParams.set('t', String(Date.now()));
       if (navigator.sendBeacon){
         const blob = new Blob(['1'], {type:'text/plain'});
         navigator.sendBeacon(u.toString(), blob);
       }
-      // 2) 備援 GET（keepalive）
       fetch(u.toString(), {method:'GET', mode:'no-cors', keepalive:true, cache:'no-store'}).catch(()=>{});
     }catch{}
   }
@@ -59,11 +58,19 @@
     return {fav,toggle};
   }
 
+  // 骨架樣式
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes te-shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+    .te-skel{background:linear-gradient(90deg,#f3efe7 0,#ece6db 50%,#f3efe7 100%);background-size:400px 100%;animation:te-shimmer 1.2s infinite}
+  `;
+  document.head.appendChild(style);
+
   // 輪播
   function ProductCarousel({images=[], alt}){
     const [idx,setIdx]=useState(0);
     const count=images.length;
-    if(!count) return e('div',{className:'aspect-square w-full rounded-xl bg-white border border-line'});
+    if(!count) return e('div',{className:'aspect-square w-full rounded-xl bg-white border border-line te-skel'});
     const btnBase='absolute top-1/2 -translate-y-1/2 rounded-full border border-line bg-white/90 p-2 shadow hover:bg-white';
     return e('div',{className:'relative aspect-square w-full overflow-hidden rounded-xl bg-white'},
       e('img',{src:images[idx],alt,loading:'lazy',decoding:'async',className:'h-full w-full object-contain'}),
@@ -78,6 +85,7 @@
   // 主程式
   function App(){
     const [items,setItems]=useState([]);
+    const [loading,setLoading]=useState(true);
     const [sortBy,setSortBy]=useState('latest'); // latest | popular
     const [q,setQ]=useState('');
     const [cat,setCat]=useState('全部');
@@ -85,39 +93,59 @@
     const {fav,toggle}=useFavorites();
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 載入資料
+    // 1) 嘗試載入快取，先畫面秒出
+    useEffect(()=>{
+      try{
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw){
+          const {ts,data} = JSON.parse(raw);
+          if (Array.isArray(data) && Date.now() - ts < CACHE_TTL){
+            setItems(data);
+            setLoading(false); // 先顯示快取
+          }
+        }
+      }catch{}
+    },[]);
+
+    // 2) 背景抓最新 → 更新畫面 & 回存快取
     useEffect(()=>{
       if(!dataUrl) return;
-      const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 't=' + Date.now();
-      fetch(src).then(r=>r.json()).then(raw=>{
-        const norm = (row)=>{
-          const images = Array.isArray(row.images)? row.images : String(row.images||row.image_urls||'').split(/\s*[,\n|]\s*/).filter(Boolean);
-          const today = new Date().toISOString().slice(0,10);
-          const derivedId = slugify(row.name || row.title || row.link || '');
-          return {
-            id:String(row.id || row.ID || derivedId || ('p'+Math.random().toString(36).slice(2,8))),
-            name:String(row.name||row.title||''),
-            price:Number(row.price||0), currency:String(row.currency||'TWD'),
-            images, link:String(row.link||row.url||'#'),
-            popularity:Number(row.popularity||0),
-            addedAt:fmtYMD(row.addedAt || row.added_at || row.date || today),
-            category:String(row.category||row.cat||'')
+      const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 'v=1'; // 靜態版本號，避免每次都 cache-bust
+      fetch(src, {cache:'no-cache'})
+        .then(r=>r.json())
+        .then(raw=>{
+          const norm = (row)=>{
+            const images = Array.isArray(row.images)? row.images : String(row.images||row.image_urls||'').split(/\s*[,\n|]\s*/).filter(Boolean);
+            const today = new Date().toISOString().slice(0,10);
+            const derivedId = slugify(row.name || row.title || row.link || '');
+            return {
+              id:String(row.id || row.ID || derivedId || ('p'+Math.random().toString(36).slice(2,8))),
+              name:String(row.name||row.title||''),
+              price:Number(row.price||0), currency:String(row.currency||'TWD'),
+              images, link:String(row.link||row.url||'#'),
+              popularity:Number(row.popularity||0),
+              addedAt:fmtYMD(row.addedAt || row.added_at || row.date || today),
+              category:String(row.category||row.cat||'')
+            };
           };
-        };
-        const arr = Array.isArray(raw)? raw.map(norm): [];
-        setItems(arr);
-
-        // JSON-LD（SEO）
-        const ld = {
-          "@context":"https://schema.org","@type":"CollectionPage","name":"TOKYO SELECT 選物清單","inLanguage":"zh-Hant","url":location.href,
-          "mainEntity":{"@type":"ItemList","itemListElement":arr.map((p,i)=>({"@type":"Product","position":i+1,"name":p.name,"image":p.images&&p.images[0],"brand":p.category||"選物","offers":{"@type":"Offer","price":String(p.price),"priceCurrency":p.currency,"url":withUTM(p.link,p.id)}}))}
-        };
-        const tag=document.createElement('script'); tag.type='application/ld+json'; tag.text=JSON.stringify(ld); document.head.appendChild(tag);
-      }).catch(()=> setItems([]));
+          const arr = Array.isArray(raw)? raw.map(norm): [];
+          setItems(arr);
+          setLoading(false);
+          try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(), data:arr})); }catch{}
+          // JSON-LD（SEO）—— 只建一次即可
+          const existed = document.querySelector('script[type="application/ld+json"][data-te]');
+          if (!existed){
+            const ld = {
+              "@context":"https://schema.org","@type":"CollectionPage","name":"TOKYO SELECT 選物清單","inLanguage":"zh-Hant","url":location.href,
+              "mainEntity":{"@type":"ItemList","itemListElement":arr.map((p,i)=>({"@type":"Product","position":i+1,"name":p.name,"image":p.images&&p.images[0],"brand":p.category||"選物","offers":{"@type":"Offer","price":String(p.price),"priceCurrency":p.currency,"url":withUTM(p.link,p.id)}}))}
+            };
+            const tag=document.createElement('script'); tag.type='application/ld+json'; tag.dataset.te='1'; tag.text=JSON.stringify(ld); document.head.appendChild(tag);
+          }
+        })
+        .catch(()=>{ setLoading(false); });
     }, [dataUrl]);
 
     const categories = useMemo(()=> ['全部', ...Array.from(new Set(items.map(p=>p.category).filter(Boolean)))], [items]);
-
     const baseFiltered = useMemo(()=> items
       .filter(p=> cat==='全部'? true : p.category===cat)
       .filter(p=> (p.name||'').toLowerCase().includes(q.toLowerCase().trim()))
@@ -130,6 +158,21 @@
       }
       return [...baseFiltered].sort((a,b)=> (b.popularity||0) - (a.popularity||0));
     }, [baseFiltered,sortBy]);
+
+    // Skeleton（3 張）
+    if (loading && items.length === 0){
+      return e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
+        [0,1,2].map(i=> e('article',{key:i,className:'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-line/70'},
+          e('div',{className:'aspect-square w-full te-skel'}),
+          e('div',{className:'space-y-2 p-4'},
+            e('div',{className:'h-4 w-3/4 te-skel rounded'}),
+            e('div',{className:'h-3 w-1/3 te-skel rounded'}),
+            e('div',{className:'h-6 w-24 te-skel rounded'}),
+            e('div',{className:'h-10 w-full te-skel rounded'})
+          )
+        ))
+      );
+    }
 
     // 控制列
     const showSearch = true, showSort = true, showFavBtn = true, showCat = true;
@@ -149,13 +192,14 @@
           showSearch && e('input',{className:'h-9 w-40 sm:w-48 rounded-lg border border-line bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30',placeholder:'搜尋品名…',value:q,onChange:(ev)=>setQ(ev.target.value)})
         )
       ),
-      // 商品網格（手機優先：價格大、按鈕好點）
+      // 商品網格
       e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
         sorted.map(p=>{
           const isNew = daysFromNow(p.addedAt) <= 7;
           const link = withUTM(p.link, p.id);
-          const liked = fav.includes(p.id);
           const price = formatPrice(p.price,p.currency);
+          const {fav,toggle} = useFavorites; // (保留原有收藏按鈕行為)
+          const liked = fav?.includes ? fav.includes(p.id) : false;
 
           return e('article',{key:p.id,className:'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-line/70'},
             e('div',{className:'relative'},
@@ -180,7 +224,7 @@
                 e('a',{
                   href: link, target: '_blank', rel: SPONSORED_REL,
                   onClick: ()=> hit(p.id),
-                  onAuxClick: (ev)=>{ if (ev.button === 1) hit(p.id); }, // 中鍵開新分頁也計一次
+                  onAuxClick: (ev)=>{ if (ev.button === 1) hit(p.id); },
                   className:'mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm hover:opacity-90 active:translate-y-[1px]',
                   'aria-label': `${p.name} 前往購買`
                 }, '前往購買 →')
