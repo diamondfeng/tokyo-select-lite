@@ -7,11 +7,6 @@
   <meta name="description" content="把生活裡沒人教的小事安靜整理起來：清潔與收納的小技巧、值得信任的家居品牌、以及 Tokyo Edit Editor’s Picks。">
   <meta name="robots" content="index,follow">
 
-  <!-- 分享卡片（可之後換成你的正式網址/OG 圖） -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Tokyo Edit — 小細節，讓生活變得剛剛好">
-  <meta property="og:description" content="實用清潔與收納技巧、我們信任的品牌，還有 Editor’s Picks：那些我們真的在用的好物。">
-
   <!-- Tailwind CDN + 品牌色 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -19,10 +14,10 @@
       theme: {
         extend: {
           colors: {
-            brand: '#D23B2A',   // 主紅
-            paper: '#F8F3EB',   // 背景米白
-            ink:   '#222222',   // 字體黑
-            line:  '#e6dfd6'    // 米白系邊線
+            brand: '#D23B2A',   /* 主紅 */
+            paper: '#F8F3EB',   /* 背景米白 */
+            ink:   '#222222',   /* 字體黑 */
+            line:  '#e6dfd6'    /* 米白系邊線 */
           },
           fontFamily: {
             sans: ['system-ui','-apple-system','BlinkMacSystemFont','Noto Sans TC','PingFang TC','Microsoft JhengHei','sans-serif']
@@ -36,19 +31,23 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-  <!-- 兩行截斷 -->
-  <style>.te-line2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}</style>
+  <style>
+    .te-line2{-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden}
+  </style>
 </head>
 <body class="bg-paper text-ink">
-  <!-- 頁首 -->
-  <header class="sticky top-0 z-20 border-b border-line bg-paper/80 backdrop-blur">
-    <div class="mx-auto max-w-6xl px-4 py-4">
+  <!-- 頁首（已加紅點） -->
+  <header class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
+    <div class="mx-auto max-w-6xl px-4 py-3">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-semibold tracking-tight">TOKYO SELECT</h1>
-          <p class="text-sm text-neutral-600">小細節，讓生活變得剛剛好</p>
+        <div class="flex items-center gap-3">
+          <span class="inline-block h-4 w-4 rounded-full bg-brand"></span>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">TOKYO SELECT</h1>
+            <p class="text-xs sm:text-sm text-neutral-600">小細節，讓生活變得剛剛好</p>
+          </div>
         </div>
-        <a class="hidden sm:inline-block rounded-xl bg-brand px-3 py-2 text-sm font-medium text-white hover:opacity-95"
+        <a class="rounded-xl bg-brand px-3 py-2 text-sm font-medium text-white hover:opacity-95"
            href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist"
            target="_blank" rel="noopener noreferrer">訂閱 Tokyo Edit</a>
       </div>
@@ -56,11 +55,11 @@
   </header>
 
   <!-- React 掛載點 -->
-  <main class="mx-auto max-w-6xl px-4 py-6">
+  <main class="mx-auto max-w-6xl px-4 py-4 sm:py-6">
     <div id="root" class="text-sm text-neutral-500">載入中…</div>
   </main>
 
-  <footer class="mx-auto max-w-6xl px-4 pb-12 pt-8 text-center text-xs text-neutral-600 border-t border-line">
+  <footer class="mx-auto max-w-6xl px-4 pb-16 pt-6 text-center text-xs text-neutral-600 border-t border-line">
     <p>© 2019–<span id="y"></span> Tokyo Edit · 部分連結含合作分潤，不影響售價 · 價格/庫存以合作商家頁面為準</p>
     <nav class="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
       <a href="#" target="_blank" rel="noopener noreferrer">隱私權政策</a><span>·</span>
@@ -70,21 +69,12 @@
     </nav>
   </footer>
 
-  <noscript>
-    <div class="mx-auto max-w-6xl px-4">
-      <h2>選物清單（簡版）</h2>
-      <p>你的瀏覽器沒有開啟 JavaScript，以下是純文字清單。</p>
-    </div>
-  </noscript>
-
-  <!-- 資料來源：你的 Google 試算表 Web App -->
   <script>
+    // 你的 Google Web App（沿用原本）
     window.DATA_URL = "https://script.google.com/macros/s/AKfycbyJgaiEUWYSUJKy_gAa36LbKSeuP4BgUS4niac623d6fSZ8ttlAqY5YjwwRQPkHq2z8GQ/exec?sheet=Products";
     window.UTM_PREFIX = "select";
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
-
-  <!-- 主程式 -->
   <script src="./app.js"></script>
 </body>
 </html>
