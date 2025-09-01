@@ -29,4 +29,43 @@
     <div class="mx-auto max-w-6xl px-4 py-4">
       <div class="flex items-center justify-between">
         <div>
-          <h1 c
+          <h1 class="text-2xl font-semibold tracking-tight">TOKYO SELECT</h1>
+          <p class="text-sm text-neutral-500">我們挑的，都是能讓日常更省事的東西。</p>
+        </div>
+        <a class="hidden sm:inline-block rounded-xl bg-neutral-900 px-3 py-2 text-sm font-medium text-white"
+           href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist" target="_blank" rel="noopener noreferrer">訂閱 Tokyo Edit</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- React 掛載點 -->
+  <main class="mx-auto max-w-6xl px-4 py-6">
+    <div id="root" class="text-sm text-neutral-500">載入中…</div>
+  </main>
+
+  <footer class="mx-auto max-w-6xl px-4 pb-12 pt-8 text-center text-xs text-neutral-500 border-t border-neutral-200">
+    <p>© 2019–<span id="y"></span> Tokyo Edit · 部分連結含合作分潤，不影響售價 · 價格/庫存以合作商家頁面為準</p>
+    <nav class="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+      <a href="#" target="_blank" rel="noopener noreferrer">隱私權政策</a><span>·</span>
+      <a href="#" target="_blank" rel="noopener noreferrer">使用者條款/免責</a><span>·</span>
+      <a href="mailto:tokyoedittt@gmail.com">聯絡我們（tokyoedittt@gmail.com）</a><span>·</span>
+      <a href="#" target="_blank" rel="noopener noreferrer">訂閱電子報</a>
+    </nav>
+  </footer>
+
+  <noscript>
+    <div class="mx-auto max-w-6xl px-4">
+      <h2>選物清單（簡版）</h2>
+      <p>你的瀏覽器沒有開啟 JavaScript，以下是純文字清單。</p>
+    </div>
+  </noscript>
+
+  <!-- 關鍵設定：接你的 Google 試算表 Web App -->
+  <script>
+    window.DATA_URL = "https://script.google.com/macros/s/AKfycbyJgaiEUWYSUJKy_gAa36LbKSeuP4BgUS4niac623d6fSZ8ttlAqY5YjwwRQPkHq2z8GQ/exec?sheet=Products";
+    window.UTM_PREFIX = "select";
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>
