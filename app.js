@@ -9,10 +9,24 @@
     try{ return new Intl.NumberFormat('zh-TW',{style:'currency',currency:currency||'TWD',maximumFractionDigits:0}).format(Number(n||0)); }
     catch{ return `${n} ${currency||''}`; }
   }
+  // 把任何可解析日期轉 YYYY-MM-DD（本地時區）
+  function fmtYMD(x){
+    if (!x) return '';
+    // 先處理字串帶 T 的情況
+    if (typeof x === 'string' && x.includes('T')) {
+      const d = new Date(x);
+      if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return x.split('T')[0];
+    }
+    const d = new Date(x);
+    if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return String(x);
+  }
   function daysFromNow(dateStr){
-    const one=86400000; const t=new Date(dateStr).getTime();
-    if(!t) return 999;
-    return Math.floor((Date.now()-t)/one);
+    const d = new Date(dateStr);
+    const one=86400000;
+    if (isNaN(d)) return 999;
+    return Math.floor((Date.now()-d.getTime())/one);
   }
   function withUTM(raw, pid){
     try{
@@ -25,7 +39,7 @@
       return url.toString();
     }catch{ return raw; }
   }
-  // 回報點擊（不阻塞跳轉）
+  // 回報點擊（支援 sendBeacon：POST → 後端 doPost 已處理）
   function hit(id){
     try{
       const u = new URL(window.DATA_URL);
@@ -33,7 +47,6 @@
       u.searchParams.set('id', id);
       u.searchParams.set('ua', navigator.userAgent || '');
       u.searchParams.set('ref', location.href || '');
-      // sendBeacon（需帶 body）
       if (navigator.sendBeacon){
         const blob = new Blob(['.'], {type:'text/plain'});
         navigator.sendBeacon(u.toString(), blob);
@@ -78,7 +91,7 @@
     const {fav,toggle}=useFavorites();
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 載入資料（popularity 已加上點擊數）
+    // 載入資料（popularity 已加點擊數；日期在後端也已轉 yyyy-MM-dd）
     useEffect(()=>{
       if(!dataUrl) return;
       const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 't=' + Date.now();
@@ -92,7 +105,7 @@
             price:Number(row.price||0), currency:String(row.currency||'TWD'),
             images, link:String(row.link||row.url||'#'),
             popularity:Number(row.popularity||0),
-            addedAt:String(row.addedAt||row.added_at||row.date||today),
+            addedAt:fmtYMD(row.addedAt || row.added_at || row.date || today), // ★ 再保險處理
             category:String(row.category||row.cat||'')
           };
         };
@@ -161,24 +174,20 @@
               e('button',{className:'absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow ring-1 ring-line hover:bg-white','aria-label':liked?'移除收藏':'加入收藏','aria-pressed':liked,onClick:()=>toggle(p.id)}, liked?'❤️':'🤍')
             ),
             e('div',{className:'space-y-2 p-4'},
-              // 品名
               e('h3',{className:'te-line2 text-base sm:text-[15px] font-medium leading-snug'}, p.name),
-              // 類別 / 上架 or 人氣
               e('div',{className:'flex items-center justify-between text-xs text-neutral-600'},
                 e('span',null,p.category||'日常'),
-                e('span',null, sortBy==='latest'? `上架 ${p.addedAt}`: `人氣分數 ${p.popularity||0}`)
+                e('span',null, sortBy==='latest'? `上架 ${fmtYMD(p.addedAt)}`: `人氣分數 ${p.popularity||0}`) // ★ 日期已純化
               ),
-              // 價格（加粗、獨立一行）
               e('div',{className:'pt-1'},
                 e('div',{className:'text-lg sm:text-base font-extrabold tracking-wide'}, price)
               ),
-              // 購買按鈕（回報點擊）
               e('div',null,
                 e('a',{
                   href: link,
                   target: '_blank',
                   rel: SPONSORED_REL,
-                  onClick: ()=> hit(p.id),
+                  onClick: ()=> hit(p.id), // ★ 回報點擊
                   className:'mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm hover:opacity-90 active:translate-y-[1px]',
                   'aria-label': `${p.name} 前往購買`
                 }, '前往購買 →')
