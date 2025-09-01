@@ -6,37 +6,22 @@
   <title>Tokyo Edit — 小細節，讓生活變得剛剛好</title>
   <meta name="description" content="把生活裡沒人教的小事安靜整理起來：清潔與收納的小技巧、值得信任的家居品牌、以及 Tokyo Edit Editor’s Picks。">
   <meta name="robots" content="index,follow">
-
-  <!-- Tailwind CDN + 品牌色 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            brand: '#D23B2A',   /* 主紅 */
-            paper: '#F8F3EB',   /* 背景米白 */
-            ink:   '#222222',   /* 字體黑 */
-            line:  '#e6dfd6'    /* 米白系邊線 */
-          },
-          fontFamily: {
-            sans: ['system-ui','-apple-system','BlinkMacSystemFont','Noto Sans TC','PingFang TC','Microsoft JhengHei','sans-serif']
-          }
+          colors: { brand:'#D23B2A', paper:'#F8F3EB', ink:'#222222', line:'#e6dfd6' },
+          fontFamily: { sans:['system-ui','-apple-system','BlinkMacSystemFont','Noto Sans TC','PingFang TC','Microsoft JhengHei','sans-serif'] }
         }
       }
     }
   </script>
-
-  <!-- React via CDN -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <style>
-    .te-line2{-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden}
-  </style>
+  <style>.te-line2{-webkit-line-clamp:2;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden}</style>
 </head>
 <body class="bg-paper text-ink">
-  <!-- 頁首（已加紅點） -->
   <header class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
     <div class="mx-auto max-w-6xl px-4 py-3">
       <div class="flex items-center justify-between">
@@ -54,7 +39,6 @@
     </div>
   </header>
 
-  <!-- React 掛載點 -->
   <main class="mx-auto max-w-6xl px-4 py-4 sm:py-6">
     <div id="root" class="text-sm text-neutral-500">載入中…</div>
   </main>
@@ -70,7 +54,7 @@
   </footer>
 
   <script>
-    // ✅ 換成你新的 Web App 網址（保留 ?sheet=Products）
+    // 換成你的執行網址（保留 ?sheet=Products）
     window.DATA_URL = "https://script.google.com/macros/s/AKfycbwJEF9rWKvVO22671JPDnAMXc73Bu-IN89AmyOw49fucUTLUM4oe7SVBzCrHWgLRAMy1g/exec?sheet=Products";
     window.UTM_PREFIX = "select";
     document.getElementById('y').textContent = new Date().getFullYear();
