@@ -5,35 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tokyo Edit — 小細節，讓生活變得剛剛好</title>
   <meta name="description" content="把生活裡沒人教的小事安靜整理起來：清潔與收納的小技巧、值得信任的家居品牌、以及 Tokyo Edit Editor’s Picks。">
+  <link rel="canonical" href="https://example.com/select"><!-- 換成你的正式網址 -->
   <meta name="robots" content="index,follow">
+  <!-- Search Console 驗證（可稍後再填） -->
+  <meta name="google-site-verification" content="PASTE_GOOGLE_SITE_VERIFICATION_TOKEN_HERE">
+
+  <!-- 分享卡片 -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Tokyo Edit — 小細節，讓生活變得剛剛好">
   <meta property="og:description" content="實用清潔與收納技巧、我們信任的品牌，還有 Editor’s Picks：那些我們真的在用的好物。">
-  <meta property="og:image" content="https://example.com/og-select.jpg">
-  <!-- Tailwind Play CDN（免安裝） -->
+  <meta property="og:url" content="https://example.com/select">
+  <meta property="og:image" content="https://example.com/og-select.jpg"><!-- 換成你的 OG 圖 -->
+
+  <!-- 樣式 / 函式庫（免安裝） -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { theme: { extend: { fontFamily: { sans: ['system-ui','-apple-system','BlinkMacSystemFont','Noto Sans TC','PingFang TC','Microsoft JhengHei','sans-serif'] }}}}
   </script>
-  <!-- React via CDN（免安裝） -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- 兩行文字截斷的小工具樣式 -->
-  <style>
-    .te-line2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  </style>
+  <style>.te-line2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}</style>
 </head>
 <body class="bg-white text-neutral-900">
-  <!-- 頁首（標題 + Slogan + 訂閱） -->
+  <!-- 頁首（最新版文案） -->
   <header class="sticky top-0 z-20 border-b border-neutral-200/80 bg-white/80 backdrop-blur">
     <div class="mx-auto max-w-6xl px-4 py-4">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-semibold tracking-tight">TOKYO SELECT</h1>
-          <p class="text-sm text-neutral-500">我們挑的，都是能讓日常更省事的東西。</p>
+          <p class="text-sm text-neutral-500">小細節，讓生活變得剛剛好</p>
         </div>
         <a class="hidden sm:inline-block rounded-xl bg-neutral-900 px-3 py-2 text-sm font-medium text-white"
-           href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist" target="_blank" rel="noopener noreferrer">訂閱 Tokyo Edit</a>
+           href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist"
+           target="_blank" rel="noopener noreferrer">喜歡這種安靜好用的提醒，歡迎訂閱 Tokyo Edit。</a>
       </div>
     </div>
   </header>
@@ -42,6 +46,11 @@
   <main class="mx-auto max-w-6xl px-4 py-6">
     <div id="root" class="text-sm text-neutral-500">載入中…</div>
   </main>
+
+  <!-- About 短說明（最新版語氣） -->
+  <section class="mx-auto max-w-6xl px-4 small about-note" style="margin-top:24px;">
+    <p>我們會不定期分享：清潔與收納小知識、我們信任的家居品牌，還有 <strong>Tokyo Edit Editor’s Picks</strong> —— 編輯親選、真的在用、願意長期使用的清單。</p>
+  </section>
 
   <footer class="mx-auto max-w-6xl px-4 pb-12 pt-8 text-center text-xs text-neutral-500 border-t border-neutral-200">
     <p>© 2019–<span id="y"></span> Tokyo Edit · 部分連結含合作分潤，不影響售價 · 價格/庫存以合作商家頁面為準</p>
@@ -60,12 +69,14 @@
     </div>
   </noscript>
 
-  <!-- 關鍵設定：接你的 Google 試算表 Web App -->
+  <!-- 關鍵設定：你的 Google 試算表 Web App -->
   <script>
     window.DATA_URL = "https://script.google.com/macros/s/AKfycbyJgaiEUWYSUJKy_gAa36LbKSeuP4BgUS4niac623d6fSZ8ttlAqY5YjwwRQPkHq2z8GQ/exec?sheet=Products";
     window.UTM_PREFIX = "select";
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
+
+  <!-- 主程式（UI + JSON-LD + 合規 rel） -->
   <script src="./app.js"></script>
 </body>
 </html>
