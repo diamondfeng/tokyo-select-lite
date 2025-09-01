@@ -25,8 +25,25 @@
       return url.toString();
     }catch{ return raw; }
   }
+  // 回報點擊（不阻塞跳轉）
+  function hit(id){
+    try{
+      const u = new URL(window.DATA_URL);
+      u.searchParams.set('action','hit');
+      u.searchParams.set('id', id);
+      u.searchParams.set('ua', navigator.userAgent || '');
+      u.searchParams.set('ref', location.href || '');
+      // sendBeacon 需要有 body，給一個最小 blob
+      if (navigator.sendBeacon){
+        const blob = new Blob(['.'], {type:'text/plain'});
+        navigator.sendBeacon(u.toString(), blob);
+      }else{
+        fetch(u.toString(), {mode:'no-cors'}).catch(()=>{});
+      }
+    }catch{}
+  }
 
-  // ===== 收藏（LocalStorage） =====
+  // 收藏
   function useFavorites(){
     const KEY='te_favorites';
     const [fav,setFav]=useState(()=>{ try{ const v=localStorage.getItem(KEY); return v? JSON.parse(v):[] }catch{return[]}});
@@ -35,7 +52,7 @@
     return {fav,toggle};
   }
 
-  // ===== 輪播 =====
+  // 輪播
   function ProductCarousel({images=[], alt}){
     const [idx,setIdx]=useState(0);
     const count=images.length;
@@ -51,7 +68,7 @@
     );
   }
 
-  // ===== 主程式 =====
+  // 主程式
   function App(){
     const [items,setItems]=useState([]);
     const [sortBy,setSortBy]=useState('latest'); // latest | popular
@@ -61,7 +78,7 @@
     const {fav,toggle}=useFavorites();
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 載入資料
+    // 載入資料（會拿到 popularity 已 + 點擊數 的結果）
     useEffect(()=>{
       if(!dataUrl) return;
       const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 't=' + Date.now();
@@ -106,35 +123,33 @@
       return [...baseFiltered].sort((a,b)=> (b.popularity||0) - (a.popularity||0));
     }, [baseFiltered,sortBy]);
 
-    // ===== 關鍵：改成永遠顯示控制列 =====
-    const ALWAYS_SHOW_CONTROLS = true;
-    const showSearch = ALWAYS_SHOW_CONTROLS || items.length >= 6;
-    const showSort   = ALWAYS_SHOW_CONTROLS || items.length >= 4;
-    const showFavBtn = ALWAYS_SHOW_CONTROLS || items.length >= 1;
-    const showCat    = ALWAYS_SHOW_CONTROLS || categories.length > 1;
+    // 永遠顯示控制列
+    const showSearch = true, showSort = true, showFavBtn = true, showCat = true;
 
     return e(React.Fragment, null,
       // 控制列（品牌色）
-      e('div',{className:'mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'},
+      e('div',{className:'mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'},
         e('div',{className:'flex items-center gap-2'},
-          showSort && e('div',{className:'inline-flex overflow-hidden rounded-md border border-line'},
+          showSort && e('div',{className:'inline-flex overflow-hidden rounded-full border border-line'},
             e('button',{className:`px-3 py-2 text-sm ${sortBy==='latest'?'bg-ink text-white':'bg-white text-neutral-700'}`,onClick:()=>setSortBy('latest'),'aria-label':'最新'}, '🕒 最新'),
             e('button',{className:`border-l border-line px-3 py-2 text-sm ${sortBy==='popular'?'bg-ink text-white':'bg-white text-neutral-700'}`,onClick:()=>setSortBy('popular'),'aria-label':'人氣'}, '🔥 人氣')
           ),
-          showFavBtn && e('button',{className:`ml-1 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm border ${onlyFav?'border-ink bg-ink text-white':'border-line bg-white text-neutral-700'}`,onClick:()=>setOnlyFav(v=>!v),'aria-pressed':onlyFav}, onlyFav?'❤️':'🤍','我的收藏')
+          showFavBtn && e('button',{className:`ml-1 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm border ${onlyFav?'border-ink bg-ink text-white':'border-line bg-white text-neutral-700'}`,onClick:()=>setOnlyFav(v=>!v),'aria-pressed':onlyFav}, onlyFav?'❤️':'🤍','我的收藏')
         ),
         (showCat || showSearch) && e('div',{className:'flex items-center gap-2'},
           showCat && e('span',{className:'hidden items-center gap-1 text-xs text-neutral-600 sm:flex'}, '篩選'),
-          showCat && e('select',{className:'h-9 rounded-md border border-line bg-white px-3 text-sm shadow-sm',value:cat,onChange:(ev)=>setCat(ev.target.value)}, categories.map(c=> e('option',{key:c,value:c},c))),
-          showSearch && e('input',{className:'h-9 w-48 rounded-md border border-line bg-white px-3 text-sm shadow-sm',placeholder:'搜尋品名…',value:q,onChange:(ev)=>setQ(ev.target.value)})
+          showCat && e('select',{className:'h-9 rounded-lg border border-line bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30',value:cat,onChange:(ev)=>setCat(ev.target.value)}, categories.map(c=> e('option',{key:c,value:c},c))),
+          showSearch && e('input',{className:'h-9 w-40 sm:w-48 rounded-lg border border-line bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30',placeholder:'搜尋品名…',value:q,onChange:(ev)=>setQ(ev.target.value)})
         )
       ),
-      // 商品網格（穩重卡片）
-      e('section',{className:'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'},
+      // 商品網格（手機優先：價格加粗、靠近按鈕）
+      e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
         sorted.map(p=>{
           const isNew = daysFromNow(p.addedAt) <= 7;
           const link = withUTM(p.link, p.id);
           const liked = fav.includes(p.id);
+          const price = formatPrice(p.price,p.currency);
+
           return e('article',{key:p.id,className:'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-line/70'},
             e('div',{className:'relative'},
               e('a',{href:link,target:'_blank',rel:'noopener noreferrer','aria-label':`${p.name} 前往購買`},
@@ -146,16 +161,28 @@
               e('button',{className:'absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow ring-1 ring-line hover:bg-white','aria-label':liked?'移除收藏':'加入收藏','aria-pressed':liked,onClick:()=>toggle(p.id)}, liked?'❤️':'🤍')
             ),
             e('div',{className:'space-y-2 p-4'},
-              e('div',{className:'flex items-start justify-between gap-3'},
-                e('h3',{className:'te-line2 text-base font-medium leading-snug'}, p.name),
-                e('div',{className:'shrink-0 text-right text-sm font-semibold'}, formatPrice(p.price,p.currency))
-              ),
+              // 品名
+              e('h3',{className:'te-line2 text-base sm:text-[15px] font-medium leading-snug'}, p.name),
+              // 類別 / 上架 or 人氣
               e('div',{className:'flex items-center justify-between text-xs text-neutral-600'},
                 e('span',null,p.category||'日常'),
                 e('span',null, sortBy==='latest'? `上架 ${p.addedAt}`: `人氣分數 ${p.popularity||0}`)
               ),
-              e('div',{className:'pt-1'},
-                e('a',{href:link,target:'_blank',rel:SPONSORED_REL,className:'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-3 py-2 font-medium text-white hover:opacity-90','aria-label':`${p.name} 前往購買`}, '前往購買 →')
+              // 價格（手機版強化：大、獨立一行）
+              e('div',{className:'pt-1 flex items-center justify-between'},
+                e('div',{className:'text-lg sm:text-base font-extrabold tracking-wide'}, price),
+                null
+              ),
+              // 購買按鈕（回報點擊）
+              e('div',null,
+                e('a',{
+                  href: link,
+                  target: '_blank',
+                  rel: SPONSORED_REL,
+                  onClick: ()=> hit(p.id),
+                  className:'mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm hover:opacity-90 active:translate-y-[1px]',
+                  'aria-label': `${p.name} 前往購買`
+                }, '前往購買 →')
               )
             )
           )
