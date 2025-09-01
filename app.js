@@ -33,7 +33,7 @@
       u.searchParams.set('id', id);
       u.searchParams.set('ua', navigator.userAgent || '');
       u.searchParams.set('ref', location.href || '');
-      // sendBeacon 需要有 body，給一個最小 blob
+      // sendBeacon（需帶 body）
       if (navigator.sendBeacon){
         const blob = new Blob(['.'], {type:'text/plain'});
         navigator.sendBeacon(u.toString(), blob);
@@ -78,7 +78,7 @@
     const {fav,toggle}=useFavorites();
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 載入資料（會拿到 popularity 已 + 點擊數 的結果）
+    // 載入資料（popularity 已加上點擊數）
     useEffect(()=>{
       if(!dataUrl) return;
       const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 't=' + Date.now();
@@ -127,7 +127,7 @@
     const showSearch = true, showSort = true, showFavBtn = true, showCat = true;
 
     return e(React.Fragment, null,
-      // 控制列（品牌色）
+      // 控制列
       e('div',{className:'mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'},
         e('div',{className:'flex items-center gap-2'},
           showSort && e('div',{className:'inline-flex overflow-hidden rounded-full border border-line'},
@@ -142,7 +142,7 @@
           showSearch && e('input',{className:'h-9 w-40 sm:w-48 rounded-lg border border-line bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30',placeholder:'搜尋品名…',value:q,onChange:(ev)=>setQ(ev.target.value)})
         )
       ),
-      // 商品網格（手機優先：價格加粗、靠近按鈕）
+      // 商品網格（手機優先：價格加強、按鈕好點）
       e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
         sorted.map(p=>{
           const isNew = daysFromNow(p.addedAt) <= 7;
@@ -168,10 +168,9 @@
                 e('span',null,p.category||'日常'),
                 e('span',null, sortBy==='latest'? `上架 ${p.addedAt}`: `人氣分數 ${p.popularity||0}`)
               ),
-              // 價格（手機版強化：大、獨立一行）
-              e('div',{className:'pt-1 flex items-center justify-between'},
-                e('div',{className:'text-lg sm:text-base font-extrabold tracking-wide'}, price),
-                null
+              // 價格（加粗、獨立一行）
+              e('div',{className:'pt-1'},
+                e('div',{className:'text-lg sm:text-base font-extrabold tracking-wide'}, price)
               ),
               // 購買按鈕（回報點擊）
               e('div',null,
