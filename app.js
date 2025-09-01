@@ -1,3 +1,4 @@
+// app.js — TOKYO SELECT 前端 v2.4+favfix
 (function(){
   const e = React.createElement;
   const {useState, useEffect, useMemo} = React;
@@ -9,28 +10,44 @@
   const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
 
   function formatPrice(n, currency){
-    try{ return new Intl.NumberFormat('zh-TW',{style:'currency',currency:currency||'TWD',maximumFractionDigits:0}).format(Number(n||0)); }
-    catch{ return `${n} ${currency||''}`; }
+    try{
+      return new Intl.NumberFormat('zh-TW', {
+        style:'currency', currency:currency||'TWD', maximumFractionDigits:0
+      }).format(Number(n||0));
+    }catch{ return `${n} ${currency||''}`; }
   }
   function fmtYMD(x){
     if (!x) return '';
     if (typeof x === 'string' && x.includes('T')) {
-      const d = new Date(x); if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const d = new Date(x);
+      if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       return x.split('T')[0];
     }
     const d = new Date(x);
     return isNaN(d) ? String(x) : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  function daysFromNow(dateStr){ const d=new Date(dateStr); const one=86400000; return isNaN(d)?999:Math.floor((Date.now()-d.getTime())/one); }
+  function daysFromNow(dateStr){
+    const d=new Date(dateStr), ONE=86400000;
+    return isNaN(d)?999:Math.floor((Date.now()-d.getTime())/ONE);
+  }
   function withUTM(raw, pid){
-    try{ const url=new URL(raw); const now=new Date(); const ym=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
-      url.searchParams.set('utm_source','tokyoedit'); url.searchParams.set('utm_medium','site');
-      url.searchParams.set('utm_campaign',(window.UTM_PREFIX||'select')+ym); url.searchParams.set('utm_content', pid||''); return url.toString();
+    try{
+      const url=new URL(raw);
+      const now=new Date(); const ym=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+      url.searchParams.set('utm_source','tokyoedit');
+      url.searchParams.set('utm_medium','site');
+      url.searchParams.set('utm_campaign',(window.UTM_PREFIX||'select')+ym);
+      url.searchParams.set('utm_content', pid||'');
+      return url.toString();
     }catch{ return raw; }
   }
-  function slugify(s){ return String(s||'').toLowerCase().replace(/^https?:\/\//,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,40); }
+  function slugify(s){
+    return String(s||'').toLowerCase()
+      .replace(/^https?:\/\//,'').replace(/[^a-z0-9]+/g,'-')
+      .replace(/(^-|-$)/g,'').slice(0,40);
+  }
 
-  // 回報點擊（hid 去重：同人多次點都算）
+  // 回報點擊：每次點擊帶唯一 hid；伺服器以 hid 去重（同人多次點皆算）
   function hit(id){
     try{
       const u = new URL(window.DATA_URL);
@@ -40,33 +57,38 @@
       u.searchParams.set('ua', navigator.userAgent || '');
       u.searchParams.set('ref', location.href || '');
       u.searchParams.set('hid', hid);
-      u.searchParams.set('t', String(Date.now()));
+      u.searchParams.set('t', String(Date.now())); // 防快取
+
+      // 1) Beacon（POST）
       if (navigator.sendBeacon){
         const blob = new Blob(['1'], {type:'text/plain'});
         navigator.sendBeacon(u.toString(), blob);
       }
+      // 2) 備援 GET（keepalive）
       fetch(u.toString(), {method:'GET', mode:'no-cors', keepalive:true, cache:'no-store'}).catch(()=>{});
     }catch{}
   }
 
-  // 收藏
+  // 收藏（本機）
   function useFavorites(){
     const KEY='te_favorites';
-    const [fav,setFav]=useState(()=>{ try{ const v=localStorage.getItem(KEY); return v? JSON.parse(v):[] }catch{return[]}});
-    useEffect(()=>{ try{ localStorage.setItem(KEY, JSON.stringify(fav)) }catch{} },[fav]);
+    const [fav,setFav]=useState(()=>{ try{
+      const v=localStorage.getItem(KEY); return v? JSON.parse(v):[];
+    }catch{return[];}});
+    useEffect(()=>{ try{ localStorage.setItem(KEY, JSON.stringify(fav)); }catch{} },[fav]);
     const toggle=(id)=> setFav(prev=> prev.includes(id)? prev.filter(x=>x!==id): [...prev,id]);
     return {fav,toggle};
   }
 
-  // 骨架樣式
+  // Skeleton 動效
   const style = document.createElement('style');
   style.textContent = `
-    @keyframes te-shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
-    .te-skel{background:linear-gradient(90deg,#f3efe7 0,#ece6db 50%,#f3efe7 100%);background-size:400px 100%;animation:te-shimmer 1.2s infinite}
+    @keyframes te-shimmer { 0%{background-position:-200px 0} 100%{background-position:200px 0} }
+    .te-skel { background:linear-gradient(90deg,#f3efe7 0,#ece6db 50%,#f3efe7 100%); background-size:400px 100%; animation:te-shimmer 1.2s infinite; }
   `;
   document.head.appendChild(style);
 
-  // 輪播
+  // 圖片輪播
   function ProductCarousel({images=[], alt}){
     const [idx,setIdx]=useState(0);
     const count=images.length;
@@ -86,22 +108,23 @@
   function App(){
     const [items,setItems]=useState([]);
     const [loading,setLoading]=useState(true);
-    const [sortBy,setSortBy]=useState('latest'); // latest | popular
+    const [sortBy,setSortBy]=useState('latest'); // 'latest' | 'popular'
     const [q,setQ]=useState('');
     const [cat,setCat]=useState('全部');
     const [onlyFav,setOnlyFav]=useState(false);
-    const {fav,toggle}=useFavorites();
+    const {fav,toggle}=useFavorites(); // ★ 只在這裡呼叫一次
+
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 1) 嘗試載入快取，先畫面秒出
+    // 1) 讀 localStorage 快取，秒出畫面
     useEffect(()=>{
       try{
         const raw = localStorage.getItem(CACHE_KEY);
         if (raw){
           const {ts,data} = JSON.parse(raw);
-          if (Array.isArray(data) && Date.now() - ts < CACHE_TTL){
+          if (Array.isArray(data) && Date.now()-ts < CACHE_TTL){
             setItems(data);
-            setLoading(false); // 先顯示快取
+            setLoading(false);
           }
         }
       }catch{}
@@ -110,7 +133,7 @@
     // 2) 背景抓最新 → 更新畫面 & 回存快取
     useEffect(()=>{
       if(!dataUrl) return;
-      const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 'v=1'; // 靜態版本號，避免每次都 cache-bust
+      const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 'v=1';
       fetch(src, {cache:'no-cache'})
         .then(r=>r.json())
         .then(raw=>{
@@ -132,9 +155,9 @@
           setItems(arr);
           setLoading(false);
           try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(), data:arr})); }catch{}
-          // JSON-LD（SEO）—— 只建一次即可
-          const existed = document.querySelector('script[type="application/ld+json"][data-te]');
-          if (!existed){
+
+          // JSON-LD（建一次即可）
+          if (!document.querySelector('script[type="application/ld+json"][data-te]')){
             const ld = {
               "@context":"https://schema.org","@type":"CollectionPage","name":"TOKYO SELECT 選物清單","inLanguage":"zh-Hant","url":location.href,
               "mainEntity":{"@type":"ItemList","itemListElement":arr.map((p,i)=>({"@type":"Product","position":i+1,"name":p.name,"image":p.images&&p.images[0],"brand":p.category||"選物","offers":{"@type":"Offer","price":String(p.price),"priceCurrency":p.currency,"url":withUTM(p.link,p.id)}}))}
@@ -146,6 +169,7 @@
     }, [dataUrl]);
 
     const categories = useMemo(()=> ['全部', ...Array.from(new Set(items.map(p=>p.category).filter(Boolean)))], [items]);
+
     const baseFiltered = useMemo(()=> items
       .filter(p=> cat==='全部'? true : p.category===cat)
       .filter(p=> (p.name||'').toLowerCase().includes(q.toLowerCase().trim()))
@@ -159,7 +183,7 @@
       return [...baseFiltered].sort((a,b)=> (b.popularity||0) - (a.popularity||0));
     }, [baseFiltered,sortBy]);
 
-    // Skeleton（3 張）
+    // Skeleton（首次沒快取時）
     if (loading && items.length === 0){
       return e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
         [0,1,2].map(i=> e('article',{key:i,className:'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-line/70'},
@@ -192,14 +216,14 @@
           showSearch && e('input',{className:'h-9 w-40 sm:w-48 rounded-lg border border-line bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30',placeholder:'搜尋品名…',value:q,onChange:(ev)=>setQ(ev.target.value)})
         )
       ),
-      // 商品網格
+
+      // 商品網格（手機優先：價格顯著、按鈕好點）
       e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
         sorted.map(p=>{
           const isNew = daysFromNow(p.addedAt) <= 7;
           const link = withUTM(p.link, p.id);
+          const liked = fav.includes(p.id);               // ★ 用外層 hook 的狀態
           const price = formatPrice(p.price,p.currency);
-          const {fav,toggle} = useFavorites; // (保留原有收藏按鈕行為)
-          const liked = fav?.includes ? fav.includes(p.id) : false;
 
           return e('article',{key:p.id,className:'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-line/70'},
             e('div',{className:'relative'},
@@ -209,7 +233,23 @@
               e('div',{className:'absolute left-3 top-3 flex gap-2'},
                 isNew && e('span',{className:'rounded-full bg-brand px-2 py-1 text-xs font-medium text-white'},'新')
               ),
-              e('button',{className:'absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow ring-1 ring-line hover:bg-white','aria-label':liked?'移除收藏':'加入收藏','aria-pressed':liked,onClick:()=>toggle(p.id)}, liked?'❤️':'🤍')
+              // ❤ 收藏（liked 時變紅）
+              e('button',{
+                className:'absolute right-3 top-3 rounded-full bg-white/90 p-2 shadow ring-1 ring-line hover:bg-white',
+                'aria-label': liked ? '移除收藏' : '加入收藏',
+                'aria-pressed': liked,
+                onClick:()=> toggle(p.id)
+              },
+                e('svg',{
+                  xmlns:'http://www.w3.org/2000/svg', viewBox:'0 0 24 24',
+                  width:18, height:18, className: liked ? 'text-red-500' : 'text-neutral-700', style:{display:'block'}
+                },
+                  e('path',{
+                    d:'M12.001 20.727s-6.418-3.72-9.2-7.41C1.36 11.3 2.02 7.9 4.79 6.36c2.08-1.17 4.64-.58 6.01 1.1 1.37-1.68 3.93-2.27 6.01-1.1 2.77 1.54 3.44 4.94 1.99 6.957-2.78 3.69-9.2 7.42-9.2 7.42z',
+                    fill: liked ? 'currentColor' : 'none', stroke: 'currentColor', 'stroke-width': 1.5, 'stroke-linejoin':'round'
+                  })
+                )
+              )
             ),
             e('div',{className:'space-y-2 p-4'},
               e('h3',{className:'te-line2 text-base sm:text-[15px] font-medium leading-snug'}, p.name),
@@ -224,7 +264,7 @@
                 e('a',{
                   href: link, target: '_blank', rel: SPONSORED_REL,
                   onClick: ()=> hit(p.id),
-                  onAuxClick: (ev)=>{ if (ev.button === 1) hit(p.id); },
+                  onAuxClick: (ev)=>{ if (ev.button === 1) hit(p.id); }, // 中鍵也計一次
                   className:'mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm hover:opacity-90 active:translate-y-[1px]',
                   'aria-label': `${p.name} 前往購買`
                 }, '前往購買 →')
