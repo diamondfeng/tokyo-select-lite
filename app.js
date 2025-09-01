@@ -25,20 +25,28 @@
       url.searchParams.set('utm_campaign',(window.UTM_PREFIX||'select')+ym); url.searchParams.set('utm_content', pid||''); return url.toString();
     }catch{ return raw; }
   }
-  // 穩定 id（和後端一致）
+  // 產生穩定 id（當表上沒填時，與後端規則一致）
   function slugify(s){ return String(s||'').toLowerCase().replace(/^https?:\/\//,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,40); }
 
-  // 回報點擊（sendBeacon 失敗就用 GET 後備；不擋跳轉）
+  // 回報點擊：每次點擊產生唯一 hid；同一次點擊可能送兩次（beacon+GET），伺服器用 hid 去重
   function hit(id){
     try{
       const u = new URL(window.DATA_URL);
-      u.searchParams.set('action','hit'); u.searchParams.set('id', id);
-      u.searchParams.set('ua', navigator.userAgent || ''); u.searchParams.set('ref', location.href || '');
-      let ok=false;
+      const hid = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+      u.searchParams.set('action','hit');
+      u.searchParams.set('id', id);
+      u.searchParams.set('ua', navigator.userAgent || '');
+      u.searchParams.set('ref', location.href || '');
+      u.searchParams.set('hid', hid);
+      u.searchParams.set('t', String(Date.now())); // 防快取
+
+      // 1) Beacon（POST）
       if (navigator.sendBeacon){
-        const blob = new Blob(['.'], {type:'text/plain'}); ok = navigator.sendBeacon(u.toString(), blob);
+        const blob = new Blob(['1'], {type:'text/plain'});
+        navigator.sendBeacon(u.toString(), blob);
       }
-      if (!ok){ fetch(u.toString(), {method:'GET', mode:'no-cors'}).catch(()=>{}); }
+      // 2) 備援 GET（keepalive）
+      fetch(u.toString(), {method:'GET', mode:'no-cors', keepalive:true, cache:'no-store'}).catch(()=>{});
     }catch{}
   }
 
@@ -77,7 +85,7 @@
     const {fav,toggle}=useFavorites();
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 載入資料（popularity 已加點擊數；日期純化）
+    // 載入資料
     useEffect(()=>{
       if(!dataUrl) return;
       const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 't=' + Date.now();
@@ -123,11 +131,10 @@
       return [...baseFiltered].sort((a,b)=> (b.popularity||0) - (a.popularity||0));
     }, [baseFiltered,sortBy]);
 
-    // 永遠顯示控制列
+    // 控制列
     const showSearch = true, showSort = true, showFavBtn = true, showCat = true;
 
     return e(React.Fragment, null,
-      // 控制列
       e('div',{className:'mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'},
         e('div',{className:'flex items-center gap-2'},
           showSort && e('div',{className:'inline-flex overflow-hidden rounded-full border border-line'},
@@ -142,7 +149,7 @@
           showSearch && e('input',{className:'h-9 w-40 sm:w-48 rounded-lg border border-line bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand/30',placeholder:'搜尋品名…',value:q,onChange:(ev)=>setQ(ev.target.value)})
         )
       ),
-      // 商品網格（手機優先：價格加強、按鈕好點）
+      // 商品網格（手機優先：價格大、按鈕好點）
       e('section',{className:'grid grid-cols-1 gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3'},
         sorted.map(p=>{
           const isNew = daysFromNow(p.addedAt) <= 7;
@@ -173,6 +180,7 @@
                 e('a',{
                   href: link, target: '_blank', rel: SPONSORED_REL,
                   onClick: ()=> hit(p.id),
+                  onAuxClick: (ev)=>{ if (ev.button === 1) hit(p.id); }, // 中鍵開新分頁也計一次
                   className:'mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm hover:opacity-90 active:translate-y-[1px]',
                   'aria-label': `${p.name} 前往購買`
                 }, '前往購買 →')
