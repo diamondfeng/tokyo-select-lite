@@ -1,0 +1,35 @@
+[
+  {
+    "id":"p001",
+    "name":"快乾抹布（2入）",
+    "price":259,
+    "currency":"TWD",
+    "images":["https://images.unsplash.com/photo-1591538776120-8e6b0a98f9dc?q=80&w=1600&auto=format&fit=crop"],
+    "link":"https://example.com/product/p001",
+    "popularity":86,
+    "addedAt":"2025-08-26",
+    "category":"廚房"
+  },
+  {
+    "id":"p002",
+    "name":"迷你除濕小物（2-3坪）",
+    "price":1290,
+    "currency":"TWD",
+    "images":["https://images.unsplash.com/photo-1604014237800-1c9102c78f63?q=80&w=1600&auto=format&fit=crop"],
+    "link":"https://example.com/product/p002",
+    "popularity":92,
+    "addedAt":"2025-08-25",
+    "category":"除濕/氣味"
+  },
+  {
+    "id":"p003",
+    "name":"矽膠導水瀝水墊",
+    "price":399,
+    "currency":"TWD",
+    "images":["https://images.unsplash.com/photo-1612152607435-32087d27e078?q=80&w=1600&auto=format&fit=crop"],
+    "link":"https://example.com/product/p003",
+    "popularity":75,
+    "addedAt":"2025-08-28",
+    "category":"廚房"
+  }
+]
