@@ -9,50 +9,36 @@
     try{ return new Intl.NumberFormat('zh-TW',{style:'currency',currency:currency||'TWD',maximumFractionDigits:0}).format(Number(n||0)); }
     catch{ return `${n} ${currency||''}`; }
   }
-  // 把任何可解析日期轉 YYYY-MM-DD（本地時區）
   function fmtYMD(x){
     if (!x) return '';
-    // 先處理字串帶 T 的情況
     if (typeof x === 'string' && x.includes('T')) {
-      const d = new Date(x);
-      if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const d = new Date(x); if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       return x.split('T')[0];
     }
     const d = new Date(x);
-    if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    return String(x);
+    return isNaN(d) ? String(x) : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  function daysFromNow(dateStr){
-    const d = new Date(dateStr);
-    const one=86400000;
-    if (isNaN(d)) return 999;
-    return Math.floor((Date.now()-d.getTime())/one);
-  }
+  function daysFromNow(dateStr){ const d=new Date(dateStr); const one=86400000; return isNaN(d)?999:Math.floor((Date.now()-d.getTime())/one); }
   function withUTM(raw, pid){
-    try{
-      const url=new URL(raw);
-      const now=new Date(); const ym=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
-      url.searchParams.set('utm_source','tokyoedit');
-      url.searchParams.set('utm_medium','site');
-      url.searchParams.set('utm_campaign',(window.UTM_PREFIX||'select')+ym);
-      url.searchParams.set('utm_content', pid||'');
-      return url.toString();
+    try{ const url=new URL(raw); const now=new Date(); const ym=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
+      url.searchParams.set('utm_source','tokyoedit'); url.searchParams.set('utm_medium','site');
+      url.searchParams.set('utm_campaign',(window.UTM_PREFIX||'select')+ym); url.searchParams.set('utm_content', pid||''); return url.toString();
     }catch{ return raw; }
   }
-  // 回報點擊（支援 sendBeacon：POST → 後端 doPost 已處理）
+  // 穩定 id（和後端一致）
+  function slugify(s){ return String(s||'').toLowerCase().replace(/^https?:\/\//,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,40); }
+
+  // 回報點擊（sendBeacon 失敗就用 GET 後備；不擋跳轉）
   function hit(id){
     try{
       const u = new URL(window.DATA_URL);
-      u.searchParams.set('action','hit');
-      u.searchParams.set('id', id);
-      u.searchParams.set('ua', navigator.userAgent || '');
-      u.searchParams.set('ref', location.href || '');
+      u.searchParams.set('action','hit'); u.searchParams.set('id', id);
+      u.searchParams.set('ua', navigator.userAgent || ''); u.searchParams.set('ref', location.href || '');
+      let ok=false;
       if (navigator.sendBeacon){
-        const blob = new Blob(['.'], {type:'text/plain'});
-        navigator.sendBeacon(u.toString(), blob);
-      }else{
-        fetch(u.toString(), {mode:'no-cors'}).catch(()=>{});
+        const blob = new Blob(['.'], {type:'text/plain'}); ok = navigator.sendBeacon(u.toString(), blob);
       }
+      if (!ok){ fetch(u.toString(), {method:'GET', mode:'no-cors'}).catch(()=>{}); }
     }catch{}
   }
 
@@ -91,7 +77,7 @@
     const {fav,toggle}=useFavorites();
     const dataUrl=(window.DATA_URL||'').trim();
 
-    // 載入資料（popularity 已加點擊數；日期在後端也已轉 yyyy-MM-dd）
+    // 載入資料（popularity 已加點擊數；日期純化）
     useEffect(()=>{
       if(!dataUrl) return;
       const src = dataUrl + (dataUrl.includes('?')?'&':'?') + 't=' + Date.now();
@@ -99,13 +85,14 @@
         const norm = (row)=>{
           const images = Array.isArray(row.images)? row.images : String(row.images||row.image_urls||'').split(/\s*[,\n|]\s*/).filter(Boolean);
           const today = new Date().toISOString().slice(0,10);
+          const derivedId = slugify(row.name || row.title || row.link || '');
           return {
-            id:String(row.id||row.ID||Math.random().toString(36).slice(2)),
+            id:String(row.id || row.ID || derivedId || ('p'+Math.random().toString(36).slice(2,8))),
             name:String(row.name||row.title||''),
             price:Number(row.price||0), currency:String(row.currency||'TWD'),
             images, link:String(row.link||row.url||'#'),
             popularity:Number(row.popularity||0),
-            addedAt:fmtYMD(row.addedAt || row.added_at || row.date || today), // ★ 再保險處理
+            addedAt:fmtYMD(row.addedAt || row.added_at || row.date || today),
             category:String(row.category||row.cat||'')
           };
         };
@@ -177,17 +164,15 @@
               e('h3',{className:'te-line2 text-base sm:text-[15px] font-medium leading-snug'}, p.name),
               e('div',{className:'flex items-center justify-between text-xs text-neutral-600'},
                 e('span',null,p.category||'日常'),
-                e('span',null, sortBy==='latest'? `上架 ${fmtYMD(p.addedAt)}`: `人氣分數 ${p.popularity||0}`) // ★ 日期已純化
+                e('span',null, sortBy==='latest'? `上架 ${fmtYMD(p.addedAt)}`: `人氣分數 ${p.popularity||0}`)
               ),
               e('div',{className:'pt-1'},
                 e('div',{className:'text-lg sm:text-base font-extrabold tracking-wide'}, price)
               ),
               e('div',null,
                 e('a',{
-                  href: link,
-                  target: '_blank',
-                  rel: SPONSORED_REL,
-                  onClick: ()=> hit(p.id), // ★ 回報點擊
+                  href: link, target: '_blank', rel: SPONSORED_REL,
+                  onClick: ()=> hit(p.id),
                   className:'mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand bg-brand px-4 py-2.5 text-[15px] font-semibold text-white shadow-sm hover:opacity-90 active:translate-y-[1px]',
                   'aria-label': `${p.name} 前往購買`
                 }, '前往購買 →')
