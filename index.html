@@ -6,15 +6,19 @@
   <title>Tokyo Edit — 小細節，讓生活變得剛剛好</title>
   <meta name="description" content="把生活裡沒人教的小事安靜整理起來：清潔與收納的小技巧、值得信任的家居品牌、以及 Tokyo Edit Editor’s Picks。">
   <link rel="canonical" href="https://example.com/select">
-  <!-- Search Console 驗證：把 content 換成你的 token -->
+  <!-- Search Console 驗證（可稍後再填）：把 content 換成你的 token -->
   <meta name="google-site-verification" content="PASTE_GOOGLE_SITE_VERIFICATION_TOKEN_HERE">
   <meta name="robots" content="index,follow">
+
+  <!-- 分享卡片 -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Tokyo Edit — 小細節，讓生活變得剛剛好">
   <meta property="og:description" content="實用清潔與收納技巧、我們信任的品牌，還有 Editor’s Picks：那些我們真的在用的好物。">
   <meta property="og:url" content="https://example.com/select">
   <meta property="og:image" content="https://example.com/og-select.jpg">
+
   <link rel="stylesheet" href="./styles.css">
+
   <!-- React via CDN（免安裝） -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -26,7 +30,8 @@
       <p class="subtitle">小細節，讓生活變得剛剛好</p>
       <p style="margin:12px 0 14px;">
         <a class="buybtn" style="display:inline-block;padding:10px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none;font-weight:600"
-           href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist" target="_blank" rel="noopener noreferrer">喜歡這種安靜好用的提醒，歡迎訂閱 Tokyo Edit。</a>
+           href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist"
+           target="_blank" rel="noopener noreferrer">喜歡這種安靜好用的提醒，歡迎訂閱 Tokyo Edit。</a>
       </p>
     </div>
   </header>
@@ -58,12 +63,19 @@
     </div>
   </noscript>
 
+  <!-- 關鍵設定：已接到你的 Google 試算表 Web App -->
   <script>
-    // 先用示範資料跑起來；之後換成 Google 試算表的網址
-    ./data/products.sample.json // ← 先不改也可，等等第 3-2 步會改
+    // 你的 Apps Script Web App（/exec?sheet=Products）
+    window.DATA_URL = "https://script.google.com/macros/s/AKfycbyJgaiEUWYSUJKy_gAa36LbKSeuP4BgUS4niac623d6fSZ8ttlAqY5YjwwRQPkHq2z8GQ/exec?sheet=Products";
+
+    // 追蹤 Campaign 前綴（可保留）
     window.UTM_PREFIX = "select";
+
+    // 頁尾年份
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
+
+  <!-- 主程式（已包含 JSON-LD、合規 rel 等） -->
   <script src="./app.js"></script>
 </body>
 </html>
