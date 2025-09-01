@@ -5,77 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tokyo Edit — 小細節，讓生活變得剛剛好</title>
   <meta name="description" content="把生活裡沒人教的小事安靜整理起來：清潔與收納的小技巧、值得信任的家居品牌、以及 Tokyo Edit Editor’s Picks。">
-  <link rel="canonical" href="https://example.com/select">
-  <!-- Search Console 驗證（可稍後再填）：把 content 換成你的 token -->
-  <meta name="google-site-verification" content="PASTE_GOOGLE_SITE_VERIFICATION_TOKEN_HERE">
   <meta name="robots" content="index,follow">
-
-  <!-- 分享卡片 -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Tokyo Edit — 小細節，讓生活變得剛剛好">
   <meta property="og:description" content="實用清潔與收納技巧、我們信任的品牌，還有 Editor’s Picks：那些我們真的在用的好物。">
-  <meta property="og:url" content="https://example.com/select">
   <meta property="og:image" content="https://example.com/og-select.jpg">
-
-  <link rel="stylesheet" href="./styles.css">
-
+  <!-- Tailwind Play CDN（免安裝） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['system-ui','-apple-system','BlinkMacSystemFont','Noto Sans TC','PingFang TC','Microsoft JhengHei','sans-serif'] }}}}
+  </script>
   <!-- React via CDN（免安裝） -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- 兩行文字截斷的小工具樣式 -->
+  <style>
+    .te-line2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  </style>
 </head>
-<body>
-  <header class="page-header">
-    <div class="wrap">
-      <h1 class="title">TOKYO SELECT</h1>
-      <p class="subtitle">小細節，讓生活變得剛剛好</p>
-      <p style="margin:12px 0 14px;">
-        <a class="buybtn" style="display:inline-block;padding:10px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none;font-weight:600"
-           href="https://tokyoedit.substack.com/?r=6egrl7&utm_campaign=pub-share-checklist"
-           target="_blank" rel="noopener noreferrer">喜歡這種安靜好用的提醒，歡迎訂閱 Tokyo Edit。</a>
-      </p>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <div id="root">載入中…</div>
-  </main>
-
-  <section class="wrap small about-note" style="margin-top:24px;">
-    <p>我們會不定期分享：清潔與收納小知識、我們信任的家居品牌、以及 <strong>Tokyo Edit Editor’s Picks</strong>（編輯親選、長期使用的清單）。</p>
-  </section>
-
-  <footer class="page-footer">
-    <div class="wrap">
-      <p>© 2019–<span id="y"></span> Tokyo Edit · 部分連結含合作分潤，不影響售價 · 價格/庫存以合作商家頁面為準</p>
-      <p>
-        <a href="#" target="_blank" rel="noopener noreferrer">隱私權政策</a> ·
-        <a href="#" target="_blank" rel="noopener noreferrer">使用者條款/免責</a> ·
-        <a href="mailto:tokyoedittt@gmail.com">聯絡我們（tokyoedittt@gmail.com）</a> ·
-        <a href="#" target="_blank" rel="noopener noreferrer">訂閱電子報</a>
-      </p>
-    </div>
-  </footer>
-
-  <noscript>
-    <div class="wrap">
-      <h2>選物清單（簡版）</h2>
-      <p>你的瀏覽器沒有開啟 JavaScript，以下是純文字清單。</p>
-    </div>
-  </noscript>
-
-  <!-- 關鍵設定：已接到你的 Google 試算表 Web App -->
-  <script>
-    // 你的 Apps Script Web App（/exec?sheet=Products）
-    window.DATA_URL = "https://script.google.com/macros/s/AKfycbyJgaiEUWYSUJKy_gAa36LbKSeuP4BgUS4niac623d6fSZ8ttlAqY5YjwwRQPkHq2z8GQ/exec?sheet=Products";
-
-    // 追蹤 Campaign 前綴（可保留）
-    window.UTM_PREFIX = "select";
-
-    // 頁尾年份
-    document.getElementById('y').textContent = new Date().getFullYear();
-  </script>
-
-  <!-- 主程式（已包含 JSON-LD、合規 rel 等） -->
-  <script src="./app.js"></script>
-</body>
-</html>
+<body class="bg-white text-neutral-900">
+  <!-- 頁首（標題 + Slogan + 訂閱） -->
+  <header class="sticky top-0 z-20 border-b border-neutral-200/80 bg-white/80 backdrop-blur">
+    <div class="mx-auto max-w-6xl px-4 py-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 c
